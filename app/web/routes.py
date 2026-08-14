@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from typing import AsyncIterator
 
@@ -33,10 +34,22 @@ from app.market.module import (
     SymbolNotFoundError,
     get_market_snapshot,
 )
+from app.market.tradingview import (
+    TradingViewSymbolNotFoundError,
+    TradingViewTimeoutError,
+    get_technical_snapshot,
+)
+from app.market.tradingview_desktop import (
+    TradingViewDesktopBridgeError,
+    TradingViewDesktopTimeoutError,
+    TradingViewDesktopUnavailableError,
+    get_desktop_indicator_snapshot,
+)
 
 router = APIRouter()
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
 templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
 # Per-client concurrent-AI-request cap (PRODUCT_PLAN.md §10). Keyed by
@@ -69,6 +82,13 @@ async def _release_client_slot(client_key: str) -> None:
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     settings = get_settings()
+    # StaticFiles uses second-resolution Last-Modified headers. A nanosecond
+    # mtime query prevents a same-second frontend edit from receiving a stale
+    # 304 response and running against newer HTML.
+    static_version = max(
+        (_STATIC_DIR / "app.css").stat().st_mtime_ns,
+        (_STATIC_DIR / "app.js").stat().st_mtime_ns,
+    )
     return templates.TemplateResponse(request, "dashboard.html", {
         "default_symbol": "AAPL",
         "periods": [p.value for p in Period],
@@ -76,8 +96,9 @@ async def dashboard(request: Request):
             {"value": "quick", "label": "Quick (single model)"},
             {"value": "deep", "label": "Deep (multi-agent debate)"},
         ],
-        "providers": ["openai_compatible", "openai", "anthropic", "gemini"],
+        "providers": ["openai_compatible", "openai", "deepseek", "anthropic", "gemini"],
         "max_output_tokens": settings.ai_max_output_tokens,
+        "static_version": static_version,
     })
 
 
@@ -91,6 +112,48 @@ async def market_data(symbol: str, period: str = "1Y"):
         return JSONResponse(status_code=404, content={"detail": str(exc)})
     except ProviderTimeoutError as exc:
         return JSONResponse(status_code=504, content={"detail": str(exc)})
+    except (ValueError, ValidationError) as exc:
+        return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+_EXCHANGE_SCREENER_RE = re.compile(r"^[A-Za-z0-9_]{1,20}$")
+
+
+@router.get("/api/market/{symbol}/technical")
+async def market_technical(symbol: str, exchange: str | None = None, screener: str | None = None, interval: str = "1d"):
+    settings = get_settings()
+    resolved_exchange = (exchange or settings.market_tv_default_exchange).strip()
+    resolved_screener = (screener or settings.market_tv_default_screener).strip()
+
+    if not _EXCHANGE_SCREENER_RE.match(resolved_exchange) or not _EXCHANGE_SCREENER_RE.match(resolved_screener):
+        return JSONResponse(status_code=422, content={"detail": "invalid exchange or screener"})
+
+    try:
+        snapshot = await get_technical_snapshot(symbol, resolved_exchange, resolved_screener, interval)
+        return JSONResponse(content=snapshot.model_dump())
+    except TradingViewSymbolNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+    except TradingViewTimeoutError as exc:
+        return JSONResponse(status_code=504, content={"detail": str(exc)})
+    except (ValueError, ValidationError) as exc:
+        return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@router.get("/api/market/{symbol}/desktop-indicator")
+async def market_desktop_indicator(symbol: str):
+    """LOCAL-ONLY: reads indicator values, including custom Pine Script
+    indicators, off a TradingView Desktop instance running on this host.
+    Disabled by default (APP_MARKET_TV_DESKTOP_ENABLED) — see
+    docs/TRADINGVIEW_INTEGRATION_PLAN.md."""
+    try:
+        snapshot = await get_desktop_indicator_snapshot(symbol)
+        return JSONResponse(content=snapshot.model_dump())
+    except TradingViewDesktopUnavailableError as exc:
+        return JSONResponse(status_code=503, content={"detail": str(exc)})
+    except TradingViewDesktopTimeoutError as exc:
+        return JSONResponse(status_code=504, content={"detail": str(exc)})
+    except TradingViewDesktopBridgeError as exc:
+        return JSONResponse(status_code=502, content={"detail": str(exc)})
     except (ValueError, ValidationError) as exc:
         return JSONResponse(status_code=422, content={"detail": str(exc)})
 

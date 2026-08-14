@@ -27,7 +27,13 @@ class QuickAnalysisError(Exception):
 
 
 class QuickOpenAICompatibleAdapter:
-    """Generic Chat Completions adapter (covers OpenAI and self-hosted endpoints)."""
+    """Generic Chat Completions adapter (covers OpenAI and self-hosted endpoints).
+
+    Subclasses may set ``default_base_url`` to pin a provider's public endpoint
+    so the end user does not have to type a base URL.
+    """
+
+    default_base_url: str | None = None
 
     def __init__(self) -> None:
         self._settings = get_settings()
@@ -143,6 +149,8 @@ class QuickOpenAICompatibleAdapter:
     def _resolve_base_url(self, base_url: str | None) -> str:
         if base_url:
             return base_url.strip()
+        if self.default_base_url:
+            return self.default_base_url
         # For the generic provider the plan requires an explicit base URL.
         raise QuickAnalysisError("a base URL is required for the OpenAI-compatible provider")
 

@@ -64,3 +64,41 @@ class MarketSnapshot(BaseModel):
     summary_metrics: dict[str, Any] = Field(default_factory=dict)
     series: list[SeriesPoint] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+
+class TechnicalRating(BaseModel):
+    recommendation: str  # STRONG_BUY | BUY | NEUTRAL | SELL | STRONG_SELL | ERROR
+    buy: int
+    sell: int
+    neutral: int
+
+
+class TradingViewSnapshot(BaseModel):
+    symbol: str
+    exchange: str
+    screener: str
+    interval: str
+    as_of: str
+    summary: TechnicalRating
+    oscillators: TechnicalRating
+    moving_averages: TechnicalRating
+    indicators: dict[str, float | int | str | None] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class DesktopStudy(BaseModel):
+    """One indicator's current values as read off a live TradingView Desktop
+    chart — including custom Pine Script indicators, which the public
+    TradingView scanner (TradingViewSnapshot above) can never see."""
+
+    name: str
+    values: dict[str, str] = Field(default_factory=dict)
+
+
+class DesktopIndicatorSnapshot(BaseModel):
+    requested_symbol: str
+    chart_symbol: str
+    resolution: str
+    as_of: str
+    studies: list[DesktopStudy] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)

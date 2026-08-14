@@ -3,7 +3,7 @@
 FastAPI web app that wraps market data (OpenBB/yfinance) with a Bring-Your-Own-Key
 (BYOK) AI analysis feature, in two modes:
 
-- **Quick** — a single model streams a summary (OpenAI-compatible / Anthropic / Gemini).
+- **Quick** — a single model streams a summary (OpenAI-compatible / OpenAI / DeepSeek / Anthropic / Gemini).
 - **Deep** — the [TradingAgents](https://github.com/TauricResearch/TradingAgents)
   multi-agent debate framework runs in a **separate OS subprocess**, returning a
   bull/bear/risk-structured report.

@@ -161,6 +161,16 @@ async def test_gemini_sends_key_as_header_not_query_string(monkeypatch, snapshot
     assert all("sk-gem-secret" not in e.message for e in events)
 
 
+def test_deepseek_adapter_defaults_to_deepseek_base_url():
+    """DeepSeek subclasses the OpenAI-compatible adapter and must default its
+    base URL to api.deepseek.com when none is supplied."""
+    from app.analysis.adapters.deepseek import DeepSeekAdapter
+
+    adapter = DeepSeekAdapter()
+    assert adapter._resolve_base_url(None) == "https://api.deepseek.com"
+    assert adapter._resolve_base_url("https://custom.example.com") == "https://custom.example.com"
+
+
 def test_redact_scrubs_the_actual_key_value_not_just_bearer_prefix():
     from app.analysis.adapters.openai_compatible import _redact
 

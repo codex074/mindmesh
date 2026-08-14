@@ -7,7 +7,9 @@ build it against fake adapters without touching the network.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -16,12 +18,23 @@ from app.config import get_settings
 from app.web.routes import router
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    yield
+    # No-op unless the TradingView Desktop bridge was ever used — otherwise
+    # its spawned Node/CDP subprocess would outlive this process.
+    from app.market.tradingview_desktop import close_bridge
+
+    await close_bridge()
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="MindMesh",
         docs_url=None if settings.app_env == "production" else "/docs",
         redoc_url=None,
+        lifespan=_lifespan,
     )
 
     static_dir = Path(__file__).resolve().parent / "web" / "static"

@@ -26,7 +26,7 @@ class AnalysisMode(str, Enum):
 
 # Provider identifiers accepted by the quick-mode adapter. ``openai_compatible``
 # is the generic endpoint variant (custom base_url).
-QUICK_PROVIDERS = ("openai_compatible", "openai", "anthropic", "gemini")
+QUICK_PROVIDERS = ("openai_compatible", "openai", "anthropic", "gemini", "google", "deepseek")
 
 
 class AIProvider(BaseModel):

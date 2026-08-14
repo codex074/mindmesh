@@ -3,81 +3,345 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MindMesh — Market Analysis</title>
-  <link rel="stylesheet" href="/static/app.css">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="MindMesh turns market data into a clear, AI-assisted view.">
+  <title>MindMesh — Market intelligence, clarified</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000'/%3E%3Cpath d='M6 9l6-4 6 4 6-4 2 22-8-5-6 5-6-5V9zm6-4v22m6-18v13' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/app.css?v={{ static_version }}">
 </head>
 <body>
-  <header class="topbar">
-    <h1>MindMesh</h1>
-    <p class="subtitle">Market dashboard with BYOK AI analysis</p>
+  <a class="skip-link" href="#market-workspace">Skip to market data</a>
+
+  <header class="global-nav">
+    <nav class="global-nav-inner" aria-label="Global navigation">
+      <a class="brand" href="#top" aria-label="MindMesh home">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 3l5 3.5L19 3l1 17-6-3.5L9 20l-5-3.5V6.5Z"/><path d="m9 3 .1 17M14 6.5v10"/></svg>
+        <span>MindMesh</span>
+      </a>
+      <div class="global-links">
+        <a href="#overview">Overview</a>
+        <a href="#market-overview">Markets</a>
+        <a href="#history-section">History</a>
+      </div>
+      <button id="nav-chat-btn" class="nav-action nav-chat-button" type="button" disabled>Ask MindMesh</button>
+    </nav>
   </header>
 
-  <main>
-    <section class="search">
-      <input id="symbol" type="text" value="{{ default_symbol }}" placeholder="Ticker e.g. AAPL" aria-label="Ticker symbol">
-      <select id="period" aria-label="Period">
-        {% for p in periods %}<option value="{{ p }}" {% if p == '1Y' %}selected{% endif %}>{{ p }}</option>{% endfor %}
-      </select>
-      <button id="search-btn" type="button">Search</button>
-    </section>
-
-    <section id="snapshot" class="snapshot">
-      <div id="summary" class="summary-cards" aria-live="polite">
-        <p class="empty">Enter a ticker and press search.</p>
+  <div class="sub-nav" aria-label="Market dashboard navigation">
+    <div class="sub-nav-inner">
+      <a class="sub-nav-title" href="#top">Market Intelligence</a>
+      <div class="sub-nav-actions">
+        <span>Live market data</span>
+        <a class="sub-nav-link" href="#market-workspace">Explore</a>
       </div>
-      <div id="chart" class="chart-panel" aria-live="polite"></div>
-      <div id="table-panel" class="table-panel" aria-live="polite"></div>
-      <div id="error" class="error hidden"></div>
-    </section>
-
-    <section class="actions">
-      <button id="csv-btn" type="button" disabled>Download CSV</button>
-      <button id="ai-btn" type="button">Analyse with AI</button>
-    </section>
-  </main>
-
-  <div id="ai-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ai-title">
-    <div class="modal-content">
-      <h2 id="ai-title">AI Analysis</h2>
-      <form id="ai-form">
-        <label>Provider
-          <select id="ai-provider">
-            <option value="openai_compatible">OpenAI-compatible</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Anthropic</option>
-            <option value="gemini">Google Gemini</option>
-          </select>
-        </label>
-        <label>Mode
-          <select id="ai-mode">
-            <option value="quick">Quick (single model)</option>
-            <option value="deep">Deep (multi-agent debate)</option>
-          </select>
-        </label>
-        <label>Model
-          <input id="ai-model" type="text" placeholder="model name">
-        </label>
-        <label id="base-url-field" class="hidden">Base URL
-          <input id="ai-base-url" type="text" placeholder="https://...">
-        </label>
-        <label>API Key
-          <input id="ai-key" type="password" placeholder="••••••••" autocomplete="off">
-        </label>
-        <p class="hint">The API key is used for this request only and is never stored by the app.</p>
-        <label>Question (optional)
-          <input id="ai-question" type="text" placeholder="anything specific?">
-        </label>
-        <div class="modal-actions">
-          <button type="button" id="ai-cancel">Cancel</button>
-          <button type="submit" id="ai-start">Start analysis</button>
-        </div>
-      </form>
-      <div id="ai-output" class="output hidden" aria-live="polite"></div>
-      <p id="ai-status" class="status" aria-live="polite"></p>
-      <p class="disclaimer">Educational information only — not financial advice.</p>
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
+  <main id="top">
+    <section id="overview" class="hero product-tile-light" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Markets, clarified.</p>
+        <h1 id="hero-title">See the signal.<br>Understand the story.</h1>
+        <p class="hero-lead">A focused market view with AI analysis when you want to go deeper.</p>
+      </div>
+
+      <form id="market-search" class="market-search" role="search">
+        <label class="symbol-field" for="symbol">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+          <span class="sr-only">Ticker symbol</span>
+          <input id="symbol" name="symbol" type="text" value="{{ default_symbol }}" placeholder="Ticker symbol" aria-describedby="symbol-hint" autocomplete="off" spellcheck="false" maxlength="12">
+        </label>
+        <label class="period-field" for="period">
+          <span class="sr-only">Time period</span>
+          <select id="period" name="period" aria-label="Time period">
+            {% for p in periods %}<option value="{{ p }}" {% if p == '1Y' %}selected{% endif %}>{{ p }}</option>{% endfor %}
+          </select>
+        </label>
+        <button id="search-btn" class="button-primary" type="submit">
+          <span class="search-label">View market</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </form>
+      <div id="symbol-hint" class="quick-symbols" aria-label="Popular symbols">
+        <span>Popular</span>
+        <button class="text-button" type="button" data-symbol="AAPL">AAPL</button>
+        <button class="text-button" type="button" data-symbol="MSFT">MSFT</button>
+        <button class="text-button" type="button" data-symbol="NVDA">NVDA</button>
+        <button class="text-button" type="button" data-symbol="TSLA">TSLA</button>
+      </div>
+    </section>
+
+    <section id="market-overview" class="indices-section product-tile-dark" aria-labelledby="indices-title" aria-busy="true">
+      <div class="content-wide">
+        <div class="section-heading indices-heading">
+          <div>
+            <p class="section-kicker">Market overview</p>
+            <h2 id="indices-title">The market, at a glance.</h2>
+            <p class="indices-description">Four benchmarks. One clear read on the broader US market.</p>
+          </div>
+          <button id="overview-refresh" class="button-on-dark" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6v5h-5M4 18v-5h5M18.5 9A7 7 0 0 0 6.7 6.7L4 11m16 2-2.7 4.3A7 7 0 0 1 5.5 15"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div id="market-indices" class="index-grid" aria-live="polite">
+          <div class="index-card index-card-loading" aria-hidden="true"></div>
+          <div class="index-card index-card-loading" aria-hidden="true"></div>
+          <div class="index-card index-card-loading" aria-hidden="true"></div>
+          <div class="index-card index-card-loading" aria-hidden="true"></div>
+        </div>
+        <div class="market-pulse">
+          <span class="market-pulse-label">Market pulse</span>
+          <p id="market-pulse-copy">Loading the latest benchmark direction…</p>
+          <span id="overview-updated" class="market-pulse-time"></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="market-workspace" class="market-overview product-tile-parchment" aria-labelledby="market-title" aria-busy="false">
+      <div class="content-wide">
+        <div class="section-heading market-heading">
+          <div>
+            <p class="section-kicker">Market snapshot</p>
+            <h2 id="market-title">A clearer view of <span id="summary-symbol">{{ default_symbol }}</span>.</h2>
+            <p id="summary-meta" class="section-description">Choose a ticker to load its latest market data.</p>
+          </div>
+          <div class="market-actions">
+            <button id="csv-btn" class="button-secondary-pill" type="button" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg>
+              Download CSV
+            </button>
+            <button id="ai-btn" class="button-primary" type="button" disabled>Analyse with AI</button>
+          </div>
+        </div>
+
+        <div id="error" class="error hidden" role="alert"></div>
+        <div id="summary" class="summary-cards" aria-live="polite">
+          <div class="metric-card metric-card-featured">
+            <span class="metric-label">Ready when you are</span>
+            <strong class="metric-placeholder">Search any ticker above.</strong>
+          </div>
+          <div class="metric-card metric-card-placeholder" aria-hidden="true"></div>
+          <div class="metric-card metric-card-placeholder" aria-hidden="true"></div>
+          <div class="metric-card metric-card-placeholder" aria-hidden="true"></div>
+        </div>
+
+        <div id="tv-signal-card" class="tv-signal-card hidden" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="chart-section product-tile-dark" aria-labelledby="chart-title">
+      <div class="content-wide">
+        <div class="section-heading chart-heading">
+          <div>
+            <p class="section-kicker">Price movement</p>
+            <h2 id="chart-title">The shape of the market.</h2>
+          </div>
+          <p id="chart-range" class="chart-range">Closing price · 1 year</p>
+        </div>
+        <div id="chart" class="chart-panel" aria-live="polite">
+          <div class="chart-empty">
+            <svg viewBox="0 0 160 64" aria-hidden="true"><path d="M2 53c15-1 21-18 37-17 15 1 18 13 33 10 13-3 15-26 29-27 12-1 17 11 28 7 12-4 15-16 29-24"/></svg>
+            <p>Your price chart will appear here.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="history-section" class="history-section product-tile-light" aria-labelledby="history-title">
+      <div class="content-wide">
+        <div class="section-heading history-heading">
+          <div>
+            <p class="section-kicker">Recent history</p>
+            <h2 id="history-title">Details, without the clutter.</h2>
+          </div>
+          <p class="section-description">The latest 30 observations for your selected range.</p>
+        </div>
+        <div id="table-panel" class="table-panel" aria-live="polite">
+          <div class="table-empty">Market history will appear after your search.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="analysis-section" class="analysis-promo product-tile-dark-2" aria-labelledby="analysis-title">
+      <div class="analysis-promo-copy">
+        <p class="section-kicker">MindMesh AI</p>
+        <h2 id="analysis-title">From numbers<br>to a point of view.</h2>
+        <p>Use your preferred AI provider for a quick read, or let multiple agents debate the bull, bear, and risk cases.</p>
+        <div class="analysis-promo-actions">
+          <button class="button-primary" id="ai-promo-btn" type="button" disabled>Start an analysis</button>
+          <button class="button-secondary-on-dark" id="chat-promo-btn" type="button" disabled>Ask MindMesh</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <p><strong>MindMesh</strong> combines market data with request-scoped, bring-your-own-key AI.</p>
+      <p>Educational information only. Not financial advice.</p>
+      <div class="footer-legal">
+        <span>API keys are used for one request and are never stored.</span>
+        <a href="#top">Back to top</a>
+      </div>
+    </div>
+  </footer>
+
+  <div id="ai-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ai-title" aria-describedby="ai-dialog-description">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <p class="section-kicker">Private by design</p>
+          <h2 id="ai-title">Analyse <span id="ai-symbol">this market</span>.</h2>
+          <p id="ai-dialog-description">Choose how you want the market story to be assembled.</p>
+        </div>
+        <button id="ai-close" class="icon-button" type="button" aria-label="Close analysis dialog">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <form id="ai-form">
+        <div class="form-grid">
+          <label>Provider
+            <select id="ai-provider">
+              <option value="openai_compatible">OpenAI-compatible</option>
+              <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </label>
+          <label>Analysis mode
+            <select id="ai-mode">
+              <option value="quick">Quick · single model</option>
+              <option value="deep">Deep (multi-agent debate)</option>
+            </select>
+          </label>
+          <label>Model
+            <select id="ai-model" class="hidden">
+              <option value="">Select a model…</option>
+            </select>
+            <input id="ai-model-custom" type="text" placeholder="Enter a model name" autocomplete="off">
+          </label>
+          <label id="base-url-field">Base URL
+            <input id="ai-base-url" type="url" placeholder="https://api.example.com/v1" autocomplete="off">
+          </label>
+          <label class="form-grid-wide">API key
+            <input id="ai-key" type="password" placeholder="Enter your request-scoped key" autocomplete="off">
+            <span class="field-hint">Used for this request only. MindMesh never stores your key.</span>
+          </label>
+          <label class="form-grid-wide">What should the analysis focus on? <span class="optional">Optional</span>
+            <textarea id="ai-question" rows="3" placeholder="For example: What are the main downside risks?"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="ai-cancel" class="button-secondary-pill">Cancel</button>
+          <button type="submit" id="ai-start" class="button-primary">Start analysis</button>
+        </div>
+      </form>
+
+      <div id="ai-result" class="ai-result hidden">
+        <div class="ai-result-header">
+          <span>Analysis</span>
+          <span id="ai-status" class="status" aria-live="polite"></span>
+        </div>
+        <div id="ai-output" class="output" aria-live="polite"></div>
+      </div>
+      <p class="disclaimer">AI can make mistakes. Verify important information before making a financial decision.</p>
+    </div>
+  </div>
+
+  <button id="chat-launcher" class="chat-launcher" type="button" aria-label="Open Ask MindMesh" disabled>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17.5 3.5 21l4.2-1.8A9 9 0 1 0 5 17.5Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
+    <span>Ask MindMesh</span>
+  </button>
+
+  <div id="chat-shell" class="chat-shell hidden">
+    <div class="chat-backdrop" data-close-chat></div>
+    <aside id="chat-panel" class="chat-panel" role="dialog" aria-modal="true" aria-labelledby="chat-title">
+      <header class="chat-header">
+        <div>
+          <p class="section-kicker">Market copilot</p>
+          <h2 id="chat-title">Ask MindMesh</h2>
+          <p>Chat with the market data already on screen.</p>
+        </div>
+        <div class="chat-header-actions">
+          <button id="chat-new" class="icon-button" type="button" aria-label="Start a new chat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <button id="chat-close" class="icon-button" type="button" aria-label="Close Ask MindMesh">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-context-bar">
+        <span>Context</span>
+        <strong id="chat-context-symbol">Select a market</strong>
+        <span id="chat-context-period">—</span>
+      </div>
+
+      <div id="chat-messages" class="chat-messages" aria-live="polite">
+        <div class="chat-welcome">
+          <div class="chat-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 6.5 9 3l5 3.5L19 3l1 17-6-3.5L9 20l-5-3.5V6.5Z"/><path d="m9 3 .1 17M14 6.5v10"/></svg>
+          </div>
+          <h3>What would you like to understand?</h3>
+          <p>I’ll ground every answer in the latest snapshot for the selected symbol.</p>
+          <div class="chat-suggestions">
+            <button type="button" data-chat-prompt="What is driving the current trend?">What is driving the trend?</button>
+            <button type="button" data-chat-prompt="What are the main downside risks in this data?">What are the downside risks?</button>
+            <button type="button" data-chat-prompt="Explain the latest price action in plain language.">Explain the price action</button>
+          </div>
+        </div>
+      </div>
+
+      <details id="chat-settings" class="chat-settings">
+        <summary>
+          <span>AI connection</span>
+          <span id="chat-provider-summary">OpenAI-compatible</span>
+        </summary>
+        <div class="chat-settings-grid">
+          <label>Provider
+            <select id="chat-provider">
+              <option value="openai_compatible">OpenAI-compatible</option>
+              <option value="openai">OpenAI</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </label>
+          <label>Model
+            <select id="chat-model" class="hidden"><option value="">Select a model…</option></select>
+            <input id="chat-model-custom" type="text" placeholder="Enter a model name" autocomplete="off">
+          </label>
+          <label id="chat-base-url-field" class="chat-settings-wide">Base URL
+            <input id="chat-base-url" type="url" placeholder="https://api.example.com/v1" autocomplete="off">
+          </label>
+          <label class="chat-settings-wide">API key
+            <input id="chat-key" type="password" placeholder="Enter your request-scoped key" autocomplete="off">
+            <span class="field-hint">Kept in this page only and never stored by MindMesh.</span>
+          </label>
+        </div>
+      </details>
+
+      <p id="chat-error" class="chat-error hidden" role="alert"></p>
+      <form id="chat-form" class="chat-composer">
+        <label class="sr-only" for="chat-input">Message Ask MindMesh</label>
+        <textarea id="chat-input" rows="2" placeholder="Ask about the selected market…"></textarea>
+        <div class="chat-composer-actions">
+          <span>Enter to send · Shift+Enter for a new line</span>
+          <button id="chat-stop" class="chat-stop hidden" type="button">Stop</button>
+          <button id="chat-send" class="chat-send" type="submit" aria-label="Send message">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-5 14-2.5-5.5L5 12Z"/><path d="m11.5 13.5 3-3"/></svg>
+          </button>
+        </div>
+      </form>
+      <p class="chat-disclaimer">Educational information only. Verify important information.</p>
+    </aside>
+  </div>
+
+  <script src="/static/app.js?v={{ static_version }}"></script>
 </body>
 </html>

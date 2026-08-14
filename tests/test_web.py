@@ -7,6 +7,7 @@ the AI stream is verified against a mocked adapter so no network is touched.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,6 +22,63 @@ def client(monkeypatch, snapshot_factory):
 
     monkeypatch.setattr("app.web.routes.get_market_snapshot", fake_snapshot)
     return TestClient(create_app())
+
+
+@pytest.fixture
+def client_with_tv(monkeypatch, snapshot_factory):
+    async def fake_snapshot(query):
+        return snapshot_factory(query.symbol)
+
+    async def fake_tv_snapshot(symbol, exchange, screener, interval="1d"):
+        from app.market.models import TechnicalRating, TradingViewSnapshot
+
+        return TradingViewSnapshot(
+            symbol=symbol, exchange=exchange, screener=screener, interval=interval,
+            as_of="2026-01-01T00:00:00+00:00",
+            summary=TechnicalRating(recommendation="BUY", buy=10, sell=2, neutral=3),
+            oscillators=TechnicalRating(recommendation="NEUTRAL", buy=3, sell=3, neutral=5),
+            moving_averages=TechnicalRating(recommendation="BUY", buy=7, sell=0, neutral=5),
+        )
+
+    monkeypatch.setattr("app.web.routes.get_market_snapshot", fake_snapshot)
+    monkeypatch.setattr("app.web.routes.get_technical_snapshot", fake_tv_snapshot)
+    return TestClient(create_app())
+
+
+def test_market_technical_returns_rating(client_with_tv):
+    resp = client_with_tv.get("/api/market/AAPL/technical")
+    assert resp.status_code == 200
+    assert resp.json()["summary"]["recommendation"] == "BUY"
+
+
+def test_market_technical_rejects_invalid_exchange(client_with_tv):
+    resp = client_with_tv.get("/api/market/AAPL/technical?exchange=bad;drop")
+    assert resp.status_code == 422
+
+
+def test_market_desktop_indicator_disabled_by_default(client):
+    """The Desktop bridge is off unless explicitly configured — this must
+    fail as a clean 503, not hang or 500."""
+    resp = client.get("/api/market/AAPL/desktop-indicator")
+    assert resp.status_code == 503
+
+
+def test_market_desktop_indicator_returns_studies(monkeypatch, client):
+    from app.market.models import DesktopIndicatorSnapshot, DesktopStudy
+
+    async def fake_desktop_snapshot(symbol):
+        return DesktopIndicatorSnapshot(
+            requested_symbol=symbol,
+            chart_symbol=symbol,
+            resolution="5",
+            as_of="2026-01-01T00:00:00+00:00",
+            studies=[DesktopStudy(name="EMA 13/34/89/200", values={"Plot": "304.66"})],
+        )
+
+    monkeypatch.setattr("app.web.routes.get_desktop_indicator_snapshot", fake_desktop_snapshot)
+    resp = client.get("/api/market/AAPL/desktop-indicator")
+    assert resp.status_code == 200
+    assert resp.json()["studies"][0]["name"] == "EMA 13/34/89/200"
 
 
 def test_health_live(client):
@@ -42,6 +100,35 @@ def test_dashboard_renders(client):
     assert resp.status_code == 200
     assert "MindMesh" in resp.text
     assert "Deep (multi-agent debate)" in resp.text
+    assert "/static/app.js?v=" in resp.text
+
+
+def test_analysis_provider_models_exist_before_initialisation():
+    """The analysis UI must not hit providerModels' temporal dead zone."""
+    script = (
+        Path(__file__).resolve().parents[1] / "app" / "web" / "static" / "app.js"
+    ).read_text()
+    assert script.index("const providerModels") < script.index("updateProviderFields();")
+
+
+def test_dashboard_exposes_market_overview_and_streaming_chat():
+    template = (
+        Path(__file__).resolve().parents[1]
+        / "app"
+        / "web"
+        / "templates"
+        / "dashboard.html"
+    ).read_text()
+    script = (
+        Path(__file__).resolve().parents[1] / "app" / "web" / "static" / "app.js"
+    ).read_text()
+
+    assert 'id="market-overview"' in template
+    assert 'id="chat-panel"' in template
+    assert 'id="chat-key" type="password"' in template
+    assert "loadMarketOverview();" in script
+    assert "requestAnalysisStream" in script
+    assert "chatAbortController.abort()" in script
 
 
 def test_market_data_returns_snapshot(client):

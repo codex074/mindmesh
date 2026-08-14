@@ -14,6 +14,7 @@ from typing import AsyncIterator
 
 from app.analysis.adapters.anthropic import AnthropicAdapter
 from app.analysis.adapters.deep_debate import DeepDebateAdapter
+from app.analysis.adapters.deepseek import DeepSeekAdapter
 from app.analysis.adapters.gemini import GeminiAdapter
 from app.analysis.adapters.openai_compatible import QuickOpenAICompatibleAdapter
 from app.analysis.models import AnalysisEvent, AnalysisMode, AnalysisRequest
@@ -31,6 +32,7 @@ class UnsupportedProviderError(Exception):
 _QUICK_FACTORIES = {
     "openai_compatible": QuickOpenAICompatibleAdapter,
     "openai": QuickOpenAICompatibleAdapter,
+    "deepseek": DeepSeekAdapter,
     "anthropic": AnthropicAdapter,
     "gemini": GeminiAdapter,
     "google": GeminiAdapter,

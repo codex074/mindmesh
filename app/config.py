@@ -35,6 +35,17 @@ class Settings:
     market_provider: str
     market_cache_ttl_seconds: int
     market_timeout_seconds: int
+    market_tv_default_exchange: str
+    market_tv_default_screener: str
+    market_tv_timeout_seconds: int
+    market_tv_cache_ttl_seconds: int
+
+    # TradingView Desktop bridge (LOCAL-ONLY): reads custom Pine indicators off
+    # a running TradingView Desktop via the existing tradingview-mcp Node
+    # server's CDP connection. Disabled by default — cannot run on a VPS.
+    market_tv_desktop_enabled: bool
+    market_tv_desktop_server_path: str
+    market_tv_desktop_timeout_seconds: int
 
     ai_max_output_tokens: int
     ai_timeout_seconds: int
@@ -69,6 +80,15 @@ def get_settings() -> Settings:
         market_provider=os.getenv("APP_MARKET_PROVIDER", "yfinance"),
         market_cache_ttl_seconds=_as_int(os.getenv("APP_MARKET_CACHE_TTL_SECONDS"), 120),
         market_timeout_seconds=_as_int(os.getenv("APP_MARKET_TIMEOUT_SECONDS"), 15),
+        market_tv_default_exchange=os.getenv("APP_MARKET_TV_DEFAULT_EXCHANGE", "NASDAQ"),
+        market_tv_default_screener=os.getenv("APP_MARKET_TV_DEFAULT_SCREENER", "america"),
+        market_tv_timeout_seconds=_as_int(os.getenv("APP_MARKET_TV_TIMEOUT_SECONDS"), 10),
+        market_tv_cache_ttl_seconds=_as_int(os.getenv("APP_MARKET_TV_CACHE_TTL_SECONDS"), 120),
+        market_tv_desktop_enabled=_as_bool(os.getenv("APP_MARKET_TV_DESKTOP_ENABLED"), False),
+        market_tv_desktop_server_path=os.getenv("APP_MARKET_TV_DESKTOP_SERVER_PATH", ""),
+        market_tv_desktop_timeout_seconds=_as_int(
+            os.getenv("APP_MARKET_TV_DESKTOP_TIMEOUT_SECONDS"), 20
+        ),
         ai_max_output_tokens=_as_int(os.getenv("APP_AI_MAX_OUTPUT_TOKENS"), 2000),
         ai_timeout_seconds=_as_int(os.getenv("APP_AI_TIMEOUT_SECONDS"), 90),
         ai_first_token_timeout_seconds=_as_int(
