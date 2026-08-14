@@ -1,0 +1,25 @@
+# Caddy reverse proxy for MindMesh (PRODUCT_PLAN.md §13).
+#
+# IMPORTANT (EXECUTION_PLAN.md F3 / HARD CONSTRAINT): this is an ADDITIVE site block.
+# On a host that already runs another service (e.g. `pharmshift`), APPEND this
+# site to the existing Caddyfile (or import it) — never replace the existing
+# file. Use your own domain; do not reuse another service's domain.
+
+# Basic-auth guard. The username becomes the proxy-auth identity used to
+# namespace deep-mode memory logs (x-authenticated-user). Replace credentials
+# before deploying; generate a hash with: caddy hash-password
+{
+	# Global options block — keep only if adding to a fresh Caddyfile.
+}
+
+stocks.example.com {
+	basic_auth {
+		$2a$14$REPLACE_ME_WITH_HASHED_PASSWORD
+	}
+
+	# Forward the authenticated user so the app can namespace per-user logs.
+	header_up X-Authenticated-User {http.auth.user.id}
+
+	encode gzip
+	reverse_proxy mindmesh_app:8000
+}

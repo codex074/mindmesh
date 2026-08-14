@@ -1,0 +1,15 @@
+/TradingAgents/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+/data/
+/cache/
+.DS_Store

@@ -1,0 +1,46 @@
+# MindMesh compose stack.
+#
+# IMPORTANT (EXECUTION_PLAN.md F3 / HARD CONSTRAINT): `name: mindmesh` is explicit so the
+# Compose project name never collides with another service (e.g. "pharmshift")
+# that may live on the same host. The web service binds host port 8080 only —
+# keep it distinct from any existing service's published ports; check with
+# `ss -tlnp` / `docker ps` before changing it.
+#
+# SECURITY (PRODUCT_PLAN.md §9.1, HARD CONSTRAINT): FastAPI must never be
+# reachable directly — only through Caddy's basic_auth. The port below is
+# bound to 127.0.0.1 only, so it is reachable from Caddy on the same host (or
+# joined to the same Docker network) but never from the public interface. Do
+# NOT widen this to "8080:8000" (0.0.0.0) — that bypasses Caddy's auth and the
+# X-Authenticated-User header rewrite entirely.
+
+name: mindmesh
+
+services:
+  web:
+    build: .
+    container_name: mindmesh_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+      APP_DATA_DIR: /app/data
+    ports:
+      - "127.0.0.1:8080:8000"   # loopback only; Caddy fronts it — never expose 0.0.0.0
+    volumes:
+      - mindmesh_data:/app/data
+    read_only: false   # /app/data must stay writable for deep-mode caches/logs
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  mindmesh_data:

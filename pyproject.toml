@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mindmesh"
+version = "0.1.0"
+description = "FastAPI web app wrapping market data (OpenBB/yfinance) with BYOK AI analysis (quick single-model + deep TradingAgents multi-agent debate)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "jinja2>=3.1.4",
+    "httpx>=0.27.0",
+    "pydantic>=2.6.0",
+    "yfinance>=0.2.40",
+]
+
+[project.optional-dependencies]
+# Deep ("TradingAgents") mode. Installed editable in local dev
+# (`pip install -e ./TradingAgents`) and pinned to a git SHA in the Docker
+# build. Listed here as an extra so `.[deep]` resolves in both contexts; the
+# adapter imports ``tradingagents`` lazily so quick mode never needs it.
+deep = [
+    "tradingagents @ git+https://github.com/TauricResearch/TradingAgents.git@a33fd4c0f134485a43553a2c23a63cb14adbd88f",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+mindmesh = "app.main:run"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra"

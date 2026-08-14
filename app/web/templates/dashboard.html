@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MindMesh — Market Analysis</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>MindMesh</h1>
+    <p class="subtitle">Market dashboard with BYOK AI analysis</p>
+  </header>
+
+  <main>
+    <section class="search">
+      <input id="symbol" type="text" value="{{ default_symbol }}" placeholder="Ticker e.g. AAPL" aria-label="Ticker symbol">
+      <select id="period" aria-label="Period">
+        {% for p in periods %}<option value="{{ p }}" {% if p == '1Y' %}selected{% endif %}>{{ p }}</option>{% endfor %}
+      </select>
+      <button id="search-btn" type="button">Search</button>
+    </section>
+
+    <section id="snapshot" class="snapshot">
+      <div id="summary" class="summary-cards" aria-live="polite">
+        <p class="empty">Enter a ticker and press search.</p>
+      </div>
+      <div id="chart" class="chart-panel" aria-live="polite"></div>
+      <div id="table-panel" class="table-panel" aria-live="polite"></div>
+      <div id="error" class="error hidden"></div>
+    </section>
+
+    <section class="actions">
+      <button id="csv-btn" type="button" disabled>Download CSV</button>
+      <button id="ai-btn" type="button">Analyse with AI</button>
+    </section>
+  </main>
+
+  <div id="ai-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="ai-title">
+    <div class="modal-content">
+      <h2 id="ai-title">AI Analysis</h2>
+      <form id="ai-form">
+        <label>Provider
+          <select id="ai-provider">
+            <option value="openai_compatible">OpenAI-compatible</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+        </label>
+        <label>Mode
+          <select id="ai-mode">
+            <option value="quick">Quick (single model)</option>
+            <option value="deep">Deep (multi-agent debate)</option>
+          </select>
+        </label>
+        <label>Model
+          <input id="ai-model" type="text" placeholder="model name">
+        </label>
+        <label id="base-url-field" class="hidden">Base URL
+          <input id="ai-base-url" type="text" placeholder="https://...">
+        </label>
+        <label>API Key
+          <input id="ai-key" type="password" placeholder="••••••••" autocomplete="off">
+        </label>
+        <p class="hint">The API key is used for this request only and is never stored by the app.</p>
+        <label>Question (optional)
+          <input id="ai-question" type="text" placeholder="anything specific?">
+        </label>
+        <div class="modal-actions">
+          <button type="button" id="ai-cancel">Cancel</button>
+          <button type="submit" id="ai-start">Start analysis</button>
+        </div>
+      </form>
+      <div id="ai-output" class="output hidden" aria-live="polite"></div>
+      <p id="ai-status" class="status" aria-live="polite"></p>
+      <p class="disclaimer">Educational information only — not financial advice.</p>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
